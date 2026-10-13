@@ -34,9 +34,6 @@ namespace crypto
 /// Init() is exposed with the base default (iv = std::nullopt);
 /// hash implementations reject a non-null IV.
 ///
-/// SHA-256, SHA-384, and SHA-512 are selected with the canonical identifiers
-/// "SHA256", "SHA384", and "SHA512". Availability also depends on the selected
-/// daemon provider and, for PKCS#11, the token mechanism set.
 /// Empty input is valid: Init() followed directly by Finalize() returns the
 /// digest of the empty byte sequence, as does SingleShot() with an empty span.
 class IHashContext : public IStreamingOutputContext
