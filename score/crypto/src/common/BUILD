@@ -35,5 +35,5 @@ cc_library(
     name = "flatbuffer_config_utils",
     hdrs = ["flatbuffer_config_utils.hpp"],
     visibility = ["//:__subpackages__"],
-    deps = ["@flatbuffers"],
+    deps = ["@score_baselibs//score/flatbuffers:flatbufferscpp"],
 )

@@ -23,8 +23,8 @@ filegroup(
 
 generate_cpp(
     name = "generated_crypto_config",
-    schema = "crypto_config_fbs_schema",
     output = "crypto_config_generated.h",
+    schema = "crypto_config_fbs_schema",
 )
 
 # Configuration types and structures (headers only)
@@ -56,8 +56,8 @@ cc_test(
     deps = [
         ":config",
         ":flatbuffer_config_parser",
-        "@flatbuffers",
         "@googletest//:gtest_main",
+        "@score_baselibs//score/flatbuffers:flatbufferscpp",
     ],
 )
 
@@ -79,8 +79,8 @@ cc_library(
         "//score/crypto/src/common:common_types",
         "//score/crypto/src/common:flatbuffer_config_utils",
         "//score/crypto/src/daemon/common",
-        "@score_baselibs//score/mw/log",
         "@score_baselibs//score/flatbuffers:flatbufferscpp",
+        "@score_baselibs//score/mw/log",
     ],
 )
 
