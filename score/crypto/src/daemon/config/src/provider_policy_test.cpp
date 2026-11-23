@@ -23,47 +23,41 @@ TEST(ProviderPolicyTest, EmptyConstructionPolicyAllowsDiscoveredProviders)
     const config::ProviderConstructionPolicy policy;
 
     EXPECT_TRUE(policy.Validate());
-    EXPECT_TRUE(policy.IsProviderEnabled("OPENSSL"));
-    EXPECT_TRUE(policy.IsProviderEnabled("HSM"));
+    EXPECT_TRUE(policy.IsProviderAllowed("OPENSSL"));
+    EXPECT_TRUE(policy.IsProviderAllowed("HSM"));
 }
 
-TEST(ProviderPolicyTest, ExplicitConstructionPolicyAllowsOnlyEnabledEntries)
+TEST(ProviderPolicyTest, ExplicitConstructionPolicyAllowsOnlyListedEntries)
 {
     config::ProviderConstructionPolicy policy;
-    policy.AddProvider(config::ProviderConstructionEntry{"OPENSSL", true, false});
-    policy.AddProvider(config::ProviderConstructionEntry{"HSM", false, false});
+    policy.AddProvider(config::ProviderConstructionEntry{"OPENSSL", false});
 
     EXPECT_TRUE(policy.Validate());
-    EXPECT_TRUE(policy.IsProviderEnabled("OPENSSL"));
-    EXPECT_FALSE(policy.IsProviderEnabled("HSM"));
-    EXPECT_FALSE(policy.IsProviderEnabled("UNLISTED"));
+    EXPECT_TRUE(policy.IsProviderAllowed("OPENSSL"));
+    EXPECT_FALSE(policy.IsProviderAllowed("HSM"));
+    EXPECT_FALSE(policy.IsProviderAllowed("UNLISTED"));
 }
 
-TEST(ProviderPolicyTest, ConstructionPolicyRejectsEmptyDuplicateAndDisabledRequiredEntries)
+TEST(ProviderPolicyTest, ConstructionPolicyRejectsEmptyAndDuplicateEntries)
 {
     config::ProviderConstructionPolicy empty_name;
-    empty_name.AddProvider(config::ProviderConstructionEntry{"", true, false});
+    empty_name.AddProvider(config::ProviderConstructionEntry{"", false});
     EXPECT_FALSE(empty_name.Validate());
 
     config::ProviderConstructionPolicy duplicate;
-    duplicate.AddProvider(config::ProviderConstructionEntry{"OPENSSL", true, false});
-    duplicate.AddProvider(config::ProviderConstructionEntry{"OPENSSL", true, true});
+    duplicate.AddProvider(config::ProviderConstructionEntry{"OPENSSL", false});
+    duplicate.AddProvider(config::ProviderConstructionEntry{"OPENSSL", true});
     EXPECT_FALSE(duplicate.Validate());
-
-    config::ProviderConstructionPolicy disabled_required;
-    disabled_required.AddProvider(config::ProviderConstructionEntry{"HSM", false, true});
-    EXPECT_FALSE(disabled_required.Validate());
 }
 
-TEST(ProviderPolicyTest, RoutingPolicyRejectsDisabledDefaultAndInvalidPreferences)
+TEST(ProviderPolicyTest, RoutingPolicyRejectsUnlistedDefaultAndInvalidPreferences)
 {
     config::ProviderConstructionPolicy construction;
-    construction.AddProvider(config::ProviderConstructionEntry{"OPENSSL", true, false});
-    construction.AddProvider(config::ProviderConstructionEntry{"HSM", false, false});
+    construction.AddProvider(config::ProviderConstructionEntry{"OPENSSL", false});
 
-    config::ProviderRoutingPolicy disabled_default;
-    disabled_default.SetDefaultProviderForType(common::CryptoProviderType::DEFAULT, "HSM");
-    EXPECT_FALSE(disabled_default.Validate(construction));
+    config::ProviderRoutingPolicy unlisted_default;
+    unlisted_default.SetDefaultProviderForType(common::CryptoProviderType::DEFAULT, "HSM");
+    EXPECT_FALSE(unlisted_default.Validate(construction));
 
     config::ProviderRoutingPolicy duplicate_preference;
     duplicate_preference.defaultProviderPreference = {common::CryptoProviderType::SOFTWARE,
@@ -113,8 +107,7 @@ TEST(ProviderPolicyTest, RoutingPolicyAcceptsCapabilityCombinationsAndRejectsUnk
 TEST(ProviderPolicyTest, ConfigValidationCombinesConstructionAndRoutingPolicies)
 {
     config::Config daemon_config;
-    daemon_config.GetProviderConstructionPolicy().AddProvider(
-        config::ProviderConstructionEntry{"OPENSSL", true, false});
+    daemon_config.GetProviderConstructionPolicy().AddProvider(config::ProviderConstructionEntry{"OPENSSL", false});
     daemon_config.GetProviderRoutingPolicy().SetDefaultProviderForType(common::CryptoProviderType::DEFAULT, "OPENSSL");
     EXPECT_TRUE(daemon_config.Validate());
 

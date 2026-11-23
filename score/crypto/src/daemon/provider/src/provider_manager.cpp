@@ -392,8 +392,8 @@ std::shared_ptr<IProvider> ProviderManager::SelectProviderForCapability(
         return std::shared_ptr<IProvider>{};
     };
 
-    // Resolve preferred categories in policy order. Providers in lower-priority
-    // or excluded categories are not initialized unless fallback is enabled.
+    // Resolve every category in the configured preference order. Fallback only
+    // controls whether categories outside that list may be considered.
     for (const auto preferred : preference_order)
     {
         auto provider = try_type(preferred);

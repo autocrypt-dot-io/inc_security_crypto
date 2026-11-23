@@ -25,8 +25,6 @@
 namespace score::crypto::daemon::provider
 {
 
-class ProviderManagerFactoryTestPeer;
-
 /**
  * @brief Factory for creating and initializing ProviderManager instances
  *
@@ -65,12 +63,6 @@ class ProviderManagerFactory
 
   private:
     ProviderManagerFactory() = delete;
-
-    friend class ProviderManagerFactoryTestPeer;
-
-    [[nodiscard]] static score::crypto::Expected<std::shared_ptr<ProviderManager>, common::DaemonErrorCode>
-    FinalizeProviderManager(std::shared_ptr<ProviderManager> provider_manager,
-                            const config::ProviderConstructionPolicy& construction_policy);
 
     [[nodiscard]] static score::crypto::Expected<std::unique_ptr<IProviderFactory>, common::DaemonErrorCode>
     CreateScoreProviderFactory(config::Config& config);

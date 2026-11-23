@@ -48,42 +48,15 @@ void CreateAndRegisterProviders(const std::string& factory_name,
         provider_manager.RecordFactoryResult(factory_name, factory_result.value()->CreateAndRegister(provider_manager));
     }
 }
-}  // namespace
 
-score::crypto::Expected<std::shared_ptr<ProviderManager>, common::DaemonErrorCode> ProviderManagerFactory::Create(
-    config::Config& config)
-{
-    const auto& construction_policy = config.GetProviderConstructionPolicy();
-    const auto& routing_policy = config.GetProviderRoutingPolicy();
-    if (!config.Validate())
-    {
-        score::mw::log::LogError() << "[ProviderManagerFactory] Invalid provider policy configuration";
-        return score::crypto::make_unexpected(common::DaemonErrorCode::kInvalidArgument);
-    }
-
-    // Create the provider manager instance
-    auto provider_manager = std::make_shared<ProviderManager>(routing_policy);
-
-    // Attempt each backend independently so one unavailable backend does not
-    // prevent other providers from being used.
-    auto score_factory = CreateScoreProviderFactory(config);
-    CreateAndRegisterProviders("ScoreProviderFactory", score_factory, *provider_manager);
-
-    auto pkcs11_factory = CreatePkcs11ProviderFactory(config);
-    CreateAndRegisterProviders("Pkcs11ProviderFactory", pkcs11_factory, *provider_manager);
-
-    return FinalizeProviderManager(std::move(provider_manager), construction_policy);
-}
-
-score::crypto::Expected<std::shared_ptr<ProviderManager>, common::DaemonErrorCode>
-ProviderManagerFactory::FinalizeProviderManager(std::shared_ptr<ProviderManager> provider_manager,
-                                                const config::ProviderConstructionPolicy& construction_policy)
+score::crypto::Expected<std::shared_ptr<ProviderManager>, common::DaemonErrorCode> FinalizeProviderManager(
+    std::shared_ptr<ProviderManager> provider_manager,
+    const config::ProviderConstructionPolicy& construction_policy)
 {
     bool missing_required_provider = false;
     for (const auto& configured_provider : construction_policy.providers)
     {
-        if (configured_provider.enabled && configured_provider.required &&
-            !provider_manager->IsProviderRegistered(configured_provider.providerName))
+        if (configured_provider.required && !provider_manager->IsProviderRegistered(configured_provider.providerName))
         {
             score::mw::log::LogError() << "[ProviderManagerFactory] Required provider was not registered: "
                                        << configured_provider.providerName;
@@ -130,6 +103,32 @@ ProviderManagerFactory::FinalizeProviderManager(std::shared_ptr<ProviderManager>
 
     return provider_manager;
 }
+}  // namespace
+
+score::crypto::Expected<std::shared_ptr<ProviderManager>, common::DaemonErrorCode> ProviderManagerFactory::Create(
+    config::Config& config)
+{
+    const auto& construction_policy = config.GetProviderConstructionPolicy();
+    const auto& routing_policy = config.GetProviderRoutingPolicy();
+    if (!config.Validate())
+    {
+        score::mw::log::LogError() << "[ProviderManagerFactory] Invalid provider policy configuration";
+        return score::crypto::make_unexpected(common::DaemonErrorCode::kInvalidArgument);
+    }
+
+    // Create the provider manager instance
+    auto provider_manager = std::make_shared<ProviderManager>(routing_policy);
+
+    // Attempt each backend independently so one unavailable backend does not
+    // prevent other providers from being used.
+    auto score_factory = CreateScoreProviderFactory(config);
+    CreateAndRegisterProviders("ScoreProviderFactory", score_factory, *provider_manager);
+
+    auto pkcs11_factory = CreatePkcs11ProviderFactory(config);
+    CreateAndRegisterProviders("Pkcs11ProviderFactory", pkcs11_factory, *provider_manager);
+
+    return FinalizeProviderManager(std::move(provider_manager), construction_policy);
+}
 
 score::crypto::Expected<std::unique_ptr<IProviderFactory>, common::DaemonErrorCode>
 ProviderManagerFactory::CreateScoreProviderFactory(config::Config& config)
@@ -149,7 +148,7 @@ ProviderManagerFactory::CreateScoreProviderFactory(config::Config& config)
     score_provider::ScoreProviderFactoryConfig filtered_config;
     for (const auto& entry : provider_config.GetConfig().providers)
     {
-        if (config.GetProviderConstructionPolicy().IsProviderEnabled(entry.providerName))
+        if (config.GetProviderConstructionPolicy().IsProviderAllowed(entry.providerName))
         {
             filtered_config.providers.push_back(entry);
         }
@@ -181,7 +180,7 @@ ProviderManagerFactory::CreatePkcs11ProviderFactory(config::Config& config)
     pkcs11::Pkcs11ProviderFactoryConfig filtered_config;
     for (const auto& entry : pkcs11_config.GetConfig().tokens)
     {
-        if (config.GetProviderConstructionPolicy().IsProviderEnabled(entry.providerName))
+        if (config.GetProviderConstructionPolicy().IsProviderAllowed(entry.providerName))
         {
             filtered_config.tokens.push_back(entry);
         }

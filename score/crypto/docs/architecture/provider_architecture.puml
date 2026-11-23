@@ -33,7 +33,7 @@ package "Configuration (config/)" <<Rectangle>> #FFF8DC {
 
     class ProviderConstructionPolicy {
         +providers : vector<ProviderConstructionEntry>
-        +IsProviderEnabled(name) : bool
+        +IsProviderAllowed(name) : bool
         +Validate() : bool
     }
 

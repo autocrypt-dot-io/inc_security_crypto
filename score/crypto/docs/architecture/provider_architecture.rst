@@ -133,16 +133,15 @@ owner and is resolved at a different point during build or daemon startup.
 3. Construction policy — ``ProviderConstructionPolicy``
    ``ProviderManagerFactory`` applies this policy before invoking backend
    factories. Each entry identifies a provider by its stable ``ProviderName``
-   and specifies whether construction is enabled and whether registration is
-   required for daemon startup. An empty policy permits all providers exposed
-   by compiled-in backends. A non-empty policy permits only explicitly enabled
-   entries.
+   and specifies whether registration is required for daemon startup. An empty
+   policy permits all providers exposed by compiled-in backends. A non-empty
+   policy is an allowlist and permits only explicitly listed entries.
 
    A required provider must be constructed and registered. It need not complete
    eager initialization during startup; providers such as hardware modules may
    use deferred initialization and become available on a later lookup.
 
-   An enabled provider that is not required is optional. Its construction,
+   A listed provider that is not required is optional. Its construction,
    registration, or initialization failure is retained for diagnostics but does
    not prevent daemon startup when another provider is registered and all
    explicit routing targets are satisfied. Startup fails if no provider can be
@@ -154,8 +153,8 @@ owner and is resolved at a different point during build or daemon startup.
    .. code-block:: cpp
 
       auto& construction = config.GetProviderConstructionPolicy();
-      construction.AddProvider({"OPENSSL", true, true});
-      construction.AddProvider({"hsm_slot_1", true, false});
+      construction.AddProvider({"OPENSSL", true});
+      construction.AddProvider({"hsm_slot_1", false});
 
    This configuration requires ``OPENSSL`` to be registered and permits the HSM
    provider without making its registration a startup requirement. Parsing this
@@ -169,7 +168,8 @@ owner and is resolved at a different point during build or daemon startup.
    - Explicit default providers for ``CryptoProviderType`` categories.
    - The category preference used to derive ``DEFAULT`` when it is not explicit.
    - Per-capability category preferences and whether routing may fall back to a
-     capable provider outside those preferences.
+     capable provider category outside those preferences. Disabling fallback
+     does not skip lower-priority categories that are explicitly listed.
 
    Explicit mappings use stable ``ProviderName`` values rather than runtime
    ``ProviderId`` values. A ``DEFAULT`` mapping may select any provider, while

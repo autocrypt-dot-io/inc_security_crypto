@@ -126,7 +126,6 @@ struct ProviderConstructionEntry
 {
     // NOLINTBEGIN(misc-non-private-member-variables-in-classes)
     common::ProviderName providerName;  ///< Stable provider identifier.
-    bool enabled{true};                 ///< Whether construction and registration are allowed.
     bool required{false};               ///< Whether startup requires successful registration.
     // NOLINTEND(misc-non-private-member-variables-in-classes)
 
@@ -134,10 +133,9 @@ struct ProviderConstructionEntry
 
     /// @brief Construct provider construction policy with explicit identity and state.
     /// @param name Human-readable provider identifier.
-    /// @param is_enabled Whether provider construction is enabled.
     /// @param is_required Whether startup requires provider registration.
-    ProviderConstructionEntry(const common::ProviderName& name, bool is_enabled = true, bool is_required = false)
-        : providerName{name}, enabled{is_enabled}, required{is_required}
+    ProviderConstructionEntry(const common::ProviderName& name, bool is_required = false)
+        : providerName{name}, required{is_required}
     {
     }
 };
@@ -146,7 +144,7 @@ struct ProviderConstructionEntry
  * @brief Provider construction and registration policy.
  *
  * An empty policy permits all providers discovered by compiled-in backend
- * factories. Once at least one entry is present, only explicitly enabled
+ * factories. Once at least one entry is present, only explicitly listed
  * providers are permitted.
  */
 struct ProviderConstructionPolicy
@@ -171,7 +169,7 @@ struct ProviderConstructionPolicy
      * @param provider_name Stable provider name.
      * @return true when the policy permits the provider.
      */
-    [[nodiscard]] bool IsProviderEnabled(const common::ProviderName& provider_name) const noexcept
+    [[nodiscard]] bool IsProviderAllowed(const common::ProviderName& provider_name) const noexcept
     {
         if (providers.empty())
         {
@@ -181,7 +179,7 @@ struct ProviderConstructionPolicy
         {
             if (provider.providerName == provider_name)
             {
-                return provider.enabled;
+                return true;
             }
         }
         return false;
@@ -189,15 +187,14 @@ struct ProviderConstructionPolicy
 
     /**
      * @brief Validate construction policy structure.
-     * @return true when names are non-empty and unique, and required providers are enabled.
+     * @return true when provider names are non-empty and unique.
      */
     [[nodiscard]] bool Validate() const
     {
         std::unordered_set<common::ProviderName> names;
         for (const auto& provider : providers)
         {
-            if (provider.providerName.empty() || (provider.required && !provider.enabled) ||
-                !names.insert(provider.providerName).second)
+            if (provider.providerName.empty() || !names.insert(provider.providerName).second)
             {
                 return false;
             }
@@ -213,7 +210,7 @@ struct CapabilityRoutingRule
 {
     // NOLINTBEGIN(misc-non-private-member-variables-in-classes)
     std::vector<common::CryptoProviderType> preferenceOrder;  ///< Preferred provider categories in priority order.
-    bool allowFallback{true};  ///< Whether another capable category may be used when no preference matches.
+    bool allowFallback{true};  ///< Whether a capable category outside preferenceOrder may be used.
     // NOLINTEND(misc-non-private-member-variables-in-classes)
 };
 
@@ -269,7 +266,7 @@ struct ProviderRoutingPolicy
     /**
      * @brief Validate routing policy structure and construction-policy references.
      * @param construction_policy Provider construction policy used at startup.
-     * @return true when routing rules are structurally valid and reference enabled providers.
+     * @return true when routing rules are structurally valid and reference allowed providers.
      */
     [[nodiscard]] bool Validate(const ProviderConstructionPolicy& construction_policy) const
     {
@@ -304,7 +301,7 @@ struct ProviderRoutingPolicy
         for (const auto& [provider_type, provider_name] : typeToProviderName)
         {
             if (!is_known_provider_type(provider_type) || provider_name.empty() ||
-                !construction_policy.IsProviderEnabled(provider_name))
+                !construction_policy.IsProviderAllowed(provider_name))
             {
                 return false;
             }

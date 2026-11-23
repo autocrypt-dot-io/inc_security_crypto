@@ -375,6 +375,26 @@ TEST(ProviderManagerCapabilityTest, RoutingPolicyCanDisableUnlistedCapabilityFal
     EXPECT_EQ(mgr.GetProviderForCapability(common::ProviderCapability::kCertManagement), nullptr);
 }
 
+TEST(ProviderManagerCapabilityTest, DisabledFallbackStillTriesEveryPreferredCategory)
+{
+    config::ProviderRoutingPolicy routing_policy;
+    routing_policy.SetCapabilityRouting(
+        common::ProviderCapability::kCrypto,
+        config::CapabilityRoutingRule{{common::CryptoProviderType::HARDWARE, common::CryptoProviderType::SOFTWARE},
+                                      false});
+    provider::ProviderManager mgr(std::move(routing_policy));
+    auto hardware_provider =
+        std::make_shared<ConfigurableStubProvider>("HW_PROVIDER", 0, true, common::ProviderCapability::kCrypto);
+    auto software_provider =
+        std::make_shared<ConfigurableStubProvider>("SW_PROVIDER", 1, false, common::ProviderCapability::kCrypto);
+    ASSERT_TRUE(mgr.RegisterProvider("HW_PROVIDER", hardware_provider, common::CryptoProviderType::HARDWARE));
+    ASSERT_TRUE(mgr.RegisterProvider("SW_PROVIDER", software_provider, common::CryptoProviderType::SOFTWARE));
+
+    EXPECT_EQ(mgr.GetProviderForCapability(common::ProviderCapability::kCrypto), software_provider);
+    EXPECT_EQ(hardware_provider->GetInitializationAttempts(), 1U);
+    EXPECT_EQ(software_provider->GetInitializationAttempts(), 1U);
+}
+
 TEST(ProviderManagerCapabilityTest, DisabledFallbackDoesNotInitializeExcludedProviderCategory)
 {
     config::ProviderRoutingPolicy routing_policy;
@@ -565,6 +585,22 @@ TEST(ProviderManagerDefaultResolutionTest, ExplicitCategoryMappingRejectsProvide
                                      common::CryptoProviderType::SOFTWARE));
 
     EXPECT_FALSE(mgr.Initialize());
+}
+
+TEST(ProviderManagerDefaultResolutionTest, ExplicitCategoryMappingRejectsUnknownProvider)
+{
+    config::ProviderRoutingPolicy routing_policy;
+    routing_policy.SetDefaultProviderForType(common::CryptoProviderType::HARDWARE, "MISSING_HSM");
+    provider::ProviderManager mgr(std::move(routing_policy));
+    ASSERT_TRUE(mgr.RegisterProvider("SW_PROVIDER",
+                                     std::make_shared<ConfigurableStubProvider>("SW_PROVIDER", 0, false),
+                                     common::CryptoProviderType::SOFTWARE));
+
+    EXPECT_FALSE(mgr.Initialize());
+    ASSERT_EQ(mgr.GetInitializationFailures().size(), 1U);
+    EXPECT_EQ(mgr.GetInitializationFailures().front().reason,
+              provider::ProviderFailureReason::kDefaultProviderUnavailable);
+    EXPECT_EQ(mgr.GetInitializationFailures().front().error, common::DaemonErrorCode::kProviderNotAvailable);
 }
 
 TEST(ProviderManagerDefaultResolutionTest, RuntimeCategoryOverrideRejectsProviderTypeMismatch)
