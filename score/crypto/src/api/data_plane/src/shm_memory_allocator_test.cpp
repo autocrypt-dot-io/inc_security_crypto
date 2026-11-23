@@ -22,6 +22,7 @@
 
 #include <gtest/gtest.h>
 
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
@@ -39,10 +40,16 @@ namespace mediator_operations = daemon::mediator::operations;
 class RecordingConnection final : public api::control_plane::IConnection
 {
   public:
-    Expected<protocol::ControlResponse, CryptoErrorCode> SendRequest(const protocol::ControlRequest& request) override
+    Expected<protocol::ControlResponse, CryptoErrorCode> SendRequest(protocol::ControlRequest& request) override
     {
         requests.push_back(request);
         return make_unexpected(CryptoErrorCode::kConnectionFailed);
+    }
+
+    Expected<protocol::ControlResponse, CryptoErrorCode> SendRequest(protocol::ControlRequest& request,
+                                                                     std::chrono::milliseconds /*timeout*/) override
+    {
+        return SendRequest(request);
     }
 
     protocol::DataNodeId GetConnectionNodeId() const override
@@ -110,9 +117,9 @@ class ShmMemoryAllocatorProviderHintTest : public ::testing::Test
 
         EXPECT_FALSE(allocator_->Allocate(64U, resource).has_value());
         ASSERT_EQ(connection_->requests.size(), 1U);
-        ASSERT_EQ(connection_->requests.front().operation.operations.size(), 1U);
+        ASSERT_EQ(connection_->requests.front().operations.size(), 1U);
         const auto provider_parameter =
-            connection_->requests.front().operation.operations.front().getParameter<std::uint64_t>(2U);
+            connection_->requests.front().operations.front().getParameter<std::uint64_t>(2U);
         ASSERT_TRUE(provider_parameter.has_value());
         EXPECT_EQ(provider_parameter.value(), expected_wire_provider);
     }

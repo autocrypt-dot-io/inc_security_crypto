@@ -74,12 +74,11 @@ class MediatorResourceResolutionTest : public ::testing::Test
 
         control_plane::ControlRequest request{};
         request.request_id = 1U;
-        request.pid = kPid;
-        request.uid = kUid;
+        request.client_id = common::MakeClientId(kPid, kUid);
         request.data_node_id = 0U;
         if (operation.has_value())
         {
-            request.operation = std::move(operation.value());
+            request.operations = std::move(operation.value());
         }
         return mediator_->processRequest(request);
     }
@@ -103,8 +102,8 @@ TEST_F(MediatorResourceResolutionTest, ReturnsResolvedPrimaryProviderAndPersiste
 
     const auto response = ResolveSlot();
 
-    ASSERT_EQ(response.operation.operations.size(), 1U);
-    const auto& operation = response.operation.operations.front();
+    ASSERT_EQ(response.operations.size(), 1U);
+    const auto& operation = response.operations.front();
     const auto resource_type = operation.getParameter<std::uint8_t>(1U);
     const auto is_persistent = operation.getParameter<bool>(2U);
     const auto provider_id = operation.getParameter<std::uint16_t>(3U);
@@ -124,8 +123,8 @@ TEST_F(MediatorResourceResolutionTest, PreservesProviderZeroAsAResolvedPrimaryPr
 
     const auto response = ResolveSlot();
 
-    ASSERT_EQ(response.operation.operations.size(), 1U);
-    const auto& operation = response.operation.operations.front();
+    ASSERT_EQ(response.operations.size(), 1U);
+    const auto& operation = response.operations.front();
     const auto provider_id = operation.getParameter<std::uint16_t>(3U);
 
     EXPECT_EQ(operation.result, protocol::OPERATION_RESULT_SUCCESS);
@@ -139,8 +138,8 @@ TEST_F(MediatorResourceResolutionTest, KeepsResolutionSuccessfulWhenSlotHasNoPri
 
     const auto response = ResolveSlot();
 
-    ASSERT_EQ(response.operation.operations.size(), 1U);
-    const auto& operation = response.operation.operations.front();
+    ASSERT_EQ(response.operations.size(), 1U);
+    const auto& operation = response.operations.front();
     const auto provider_id = operation.getParameter<std::uint16_t>(3U);
 
     EXPECT_EQ(operation.result, protocol::OPERATION_RESULT_SUCCESS);

@@ -151,8 +151,8 @@ TEST(ProviderHintTest, KeepsKeySlotResolutionSuccessfulWithoutProviderHint)
     const auto response = builder.build();
 
     ASSERT_TRUE(response.has_value());
-    ASSERT_EQ(response.value().operations.size(), 1U);
-    const auto& operation = response.value().operations.front();
+    ASSERT_EQ(response.value().size(), 1U);
+    const auto& operation = response.value().front();
     const auto node_id = operation.getParameter<std::uint64_t>(0U);
     const auto resource_type = operation.getParameter<std::uint8_t>(1U);
     const auto is_persistent = operation.getParameter<bool>(2U);
