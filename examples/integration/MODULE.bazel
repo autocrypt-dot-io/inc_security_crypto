@@ -11,18 +11,18 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-module(name = "score_security_crypto_integration_example")
+module(name = "score_crypto_integration_example")
 
-bazel_dep(name = "score_security_crypto", version = "0.0.0")
+bazel_dep(name = "score_crypto", version = "0.0.0")
 local_path_override(
-    module_name = "score_security_crypto",
+    module_name = "score_crypto",
     path = "../..",
 )
 
 # The integration configuration sets a public score_communication build flag,
 # so the dependency must also be directly visible to this root module.
 bazel_dep(name = "score_communication", version = "0.6.0")
-bazel_dep(name = "rules_cc", version = "0.2.25")
+bazel_dep(name = "rules_cc", version = "0.2.26")
 
 # Keep the consumer's Python rules compatible with score_tooling until the
 # dependency graph moves to the newer rules_python layout.
@@ -38,7 +38,7 @@ single_version_override(
 bazel_dep(name = "protobuf", version = "36.0.bcr.1")
 
 # A root module does not inherit dependency overrides. Mirror the source
-# revisions currently required by score_security_crypto so this Linux-only
+# revisions currently required by score_crypto so this Linux-only
 # example exercises the same gRPC stack as the repository build. The QNX-only
 # patches remain owned by the repository root and are outside this example.
 archive_override(
@@ -78,7 +78,7 @@ single_version_override(
 )
 
 # Keep the PKCS#11/Rust logging bridge aligned with the Baselibs structure used
-# by the current score_security_crypto checkout. Remove this override once the
+# by the current score_crypto checkout. Remove this override once the
 # corresponding score_logging release is available in the registry.
 git_override(
     module_name = "score_logging",
@@ -86,9 +86,9 @@ git_override(
     remote = "https://github.com/eclipse-score/logging.git",
 )
 
-# Toolchains declared as dev dependencies by score_security_crypto are not
+# Toolchains declared as dev dependencies by score_crypto are not
 # inherited by consuming modules, so the example registers its own toolchains.
-bazel_dep(name = "score_bazel_platforms", version = "1.1.0")
+bazel_dep(name = "score_bazel_platforms", version = "1.3.0")
 
 bazel_dep(name = "score_bazel_cpp_toolchains", version = "1.0.5", dev_dependency = True)
 
@@ -102,4 +102,4 @@ gcc.toolchain(
 )
 use_repo(gcc, "score_gcc_x86_64_toolchain")
 
-bazel_dep(name = "score_toolchains_rust", version = "0.10.0", dev_dependency = True)
+bazel_dep(name = "score_toolchains_rust", version = "0.10.1", dev_dependency = True)

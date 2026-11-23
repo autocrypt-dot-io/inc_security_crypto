@@ -37,18 +37,18 @@ build:x86_64-linux --host_features=gnu11
 build:x86_64-linux --@score_communication//score/memory/shared/flags:use_typedshmd=False
 
 # Build the daemon with both backend families enabled (the repository default).
-build:all-backends --@score_security_crypto//score/crypto/src/backend:score_crypto_score_backend_enabled=True
-build:all-backends --@score_security_crypto//score/crypto/src/backend:score_crypto_score_openssl_enabled=True
-build:all-backends --@score_security_crypto//score/crypto/src/backend:score_crypto_pkcs11_backend_enabled=True
+build:all-backends --@score_crypto//score/crypto/src/backend:score_crypto_score_backend_enabled=True
+build:all-backends --@score_crypto//score/crypto/src/backend:score_crypto_score_openssl_enabled=True
+build:all-backends --@score_crypto//score/crypto/src/backend:score_crypto_pkcs11_backend_enabled=True
 
 # Build and run using only the SCORE OpenSSL backend.
-build:openssl-only --@score_security_crypto//score/crypto/src/backend:score_crypto_score_backend_enabled=True
-build:openssl-only --@score_security_crypto//score/crypto/src/backend:score_crypto_score_openssl_enabled=True
-build:openssl-only --@score_security_crypto//score/crypto/src/backend:score_crypto_pkcs11_backend_enabled=False
+build:openssl-only --@score_crypto//score/crypto/src/backend:score_crypto_score_backend_enabled=True
+build:openssl-only --@score_crypto//score/crypto/src/backend:score_crypto_score_openssl_enabled=True
+build:openssl-only --@score_crypto//score/crypto/src/backend:score_crypto_pkcs11_backend_enabled=False
 
 # Build using only the PKCS#11 backend.
-build:pkcs11-only --@score_security_crypto//score/crypto/src/backend:score_crypto_score_backend_enabled=False
-build:pkcs11-only --@score_security_crypto//score/crypto/src/backend:score_crypto_score_openssl_enabled=False
-build:pkcs11-only --@score_security_crypto//score/crypto/src/backend:score_crypto_pkcs11_backend_enabled=True
+build:pkcs11-only --@score_crypto//score/crypto/src/backend:score_crypto_score_backend_enabled=False
+build:pkcs11-only --@score_crypto//score/crypto/src/backend:score_crypto_score_openssl_enabled=False
+build:pkcs11-only --@score_crypto//score/crypto/src/backend:score_crypto_pkcs11_backend_enabled=True
 
 test --test_output=errors
